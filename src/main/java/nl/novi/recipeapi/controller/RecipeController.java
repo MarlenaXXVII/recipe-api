@@ -2,14 +2,10 @@ package nl.novi.recipeapi.controller;
 
 import nl.novi.recipeapi.model.Recipe;
 import nl.novi.recipeapi.service.RecipeService;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import nl.novi.recipeapi.dto.RecipeInputDto;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+
 import java.net.URI;
 
 import java.util.List;
@@ -28,6 +24,11 @@ public class RecipeController {
     public List<Recipe> getAllRecipes() {
         return recipeService.getAllRecipes();
     }
+    @GetMapping("/{id}")
+    public ResponseEntity<Recipe> getRecipeById(@PathVariable Long id) {
+        Recipe recipe = recipeService.getRecipeById(id);
+        return ResponseEntity.ok(recipe);
+    }
     @PostMapping
     public ResponseEntity<Recipe> createRecipe(@RequestBody RecipeInputDto recipeInputDto) {
 
@@ -38,5 +39,14 @@ public class RecipeController {
         return ResponseEntity
                 .created(location)
                 .body(savedRecipe);
+    }
+    @PutMapping("/{id}")
+    public ResponseEntity<Recipe> updateRecipe(
+            @PathVariable Long id,
+            @RequestBody RecipeInputDto recipeInputDto) {
+
+        Recipe updatedRecipe = recipeService.updateRecipe(id, recipeInputDto);
+
+        return ResponseEntity.ok(updatedRecipe);
     }
 }
