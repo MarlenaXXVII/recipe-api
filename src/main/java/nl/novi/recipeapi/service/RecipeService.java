@@ -51,4 +51,8 @@ public class RecipeService {
 
         return recipeRepository.save(recipe);
     }
+    public void deleteRecipe(Long id) {
+        Recipe recipe = getRecipeById(id);
+        recipeRepository.delete(recipe);
+    }
 }
