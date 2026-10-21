@@ -1,5 +1,7 @@
 package nl.novi.recipeapi.dto;
 
+import nl.novi.recipeapi.model.Difficulty;
+
 public class RecipeInputDto {
 
     private String title;
@@ -7,6 +9,13 @@ public class RecipeInputDto {
     private Integer preparationTime;
     private Integer cookingTime;
     private Integer servings;
+    private String image;
+    private Difficulty difficulty;
+    private String instructions;
+    private Integer calories;
+    private Double protein;
+    private Double carbs;
+    private Double fat;
 
     public RecipeInputDto() {
     }
@@ -49,5 +58,61 @@ public class RecipeInputDto {
 
     public void setServings(Integer servings) {
         this.servings = servings;
+    }
+
+    public String getImage() {
+        return image;
+    }
+
+    public void setImage(String image) {
+        this.image = image;
+    }
+
+    public Difficulty getDifficulty() {
+        return difficulty;
+    }
+
+    public void setDifficulty(Difficulty difficulty) {
+        this.difficulty = difficulty;
+    }
+
+    public String getInstructions() {
+        return instructions;
+    }
+
+    public void setInstructions(String instructions) {
+        this.instructions = instructions;
+    }
+
+    public Integer getCalories() {
+        return calories;
+    }
+
+    public void setCalories(Integer calories) {
+        this.calories = calories;
+    }
+
+    public Double getProtein() {
+        return protein;
+    }
+
+    public void setProtein(Double protein) {
+        this.protein = protein;
+    }
+
+    public Double getCarbs() {
+        return carbs;
+    }
+
+    public void setCarbs(Double carbs) {
+        this.carbs = carbs;
+    }
+
+    public Double getFat() {
+        return fat;
+    }
+
+    public void setFat(Double fat) {
+        this.fat = fat;
     }
 }

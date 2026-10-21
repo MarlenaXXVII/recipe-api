@@ -30,6 +30,13 @@ public class RecipeService {
         recipe.setPreparationTime(recipeInputDto.getPreparationTime());
         recipe.setCookingTime(recipeInputDto.getCookingTime());
         recipe.setServings(recipeInputDto.getServings());
+        recipe.setImage(recipeInputDto.getImage());
+        recipe.setDifficulty(recipeInputDto.getDifficulty());
+        recipe.setInstructions(recipeInputDto.getInstructions());
+        recipe.setCalories(recipeInputDto.getCalories());
+        recipe.setProtein(recipeInputDto.getProtein());
+        recipe.setCarbs(recipeInputDto.getCarbs());
+        recipe.setFat(recipeInputDto.getFat());
 
         return recipeRepository.save(recipe);
     }
@@ -48,6 +55,13 @@ public class RecipeService {
         recipe.setPreparationTime(recipeInputDto.getPreparationTime());
         recipe.setCookingTime(recipeInputDto.getCookingTime());
         recipe.setServings(recipeInputDto.getServings());
+        recipe.setImage(recipeInputDto.getImage());
+        recipe.setDifficulty(recipeInputDto.getDifficulty());
+        recipe.setInstructions(recipeInputDto.getInstructions());
+        recipe.setCalories(recipeInputDto.getCalories());
+        recipe.setProtein(recipeInputDto.getProtein());
+        recipe.setCarbs(recipeInputDto.getCarbs());
+        recipe.setFat(recipeInputDto.getFat());
 
         return recipeRepository.save(recipe);
     }
