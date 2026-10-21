@@ -1,0 +1,186 @@
+
+package nl.novi.recipeapi.service;
+
+import nl.novi.recipeapi.dto.RecipeInputDto;
+import nl.novi.recipeapi.model.Recipe;
+import nl.novi.recipeapi.repository.RecipeRepository;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.web.server.ResponseStatusException;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+
+import java.util.List;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class RecipeServiceTest {
+
+    @Mock
+    private RecipeRepository recipeRepository;
+
+    @InjectMocks
+    private RecipeService recipeService;
+
+    @Test
+    void getAllRecipesReturnsAllRecipes() {
+
+        Recipe recipe = new Recipe();
+        recipe.setTitle("Pasta Carbonara");
+
+        when(recipeRepository.findAll())
+                .thenReturn(List.of(recipe));
+
+        List<Recipe> result = recipeService.getAllRecipes();
+
+        assertEquals(1, result.size());
+        assertEquals("Pasta Carbonara", result.get(0).getTitle());
+    }
+
+    @Test
+    void createRecipeSavesRecipe() {
+
+        RecipeInputDto inputDto = new RecipeInputDto();
+        inputDto.setTitle("Pasta Carbonara");
+        inputDto.setDescription("Een Italiaans pastagerecht");
+        inputDto.setPreparationTime(15);
+        inputDto.setCookingTime(20);
+        inputDto.setServings(2);
+
+        Recipe savedRecipe = new Recipe();
+        savedRecipe.setId(1L);
+        savedRecipe.setTitle("Pasta Carbonara");
+
+        when(recipeRepository.save(any(Recipe.class)))
+                .thenReturn(savedRecipe);
+
+        Recipe result = recipeService.createRecipe(inputDto);
+
+        assertEquals(1L, result.getId());
+        assertEquals("Pasta Carbonara", result.getTitle());
+
+        verify(recipeRepository).save(any(Recipe.class));
+    }
+
+    @Test
+    void getRecipeByIdReturnsRecipe() {
+
+        Recipe recipe = new Recipe();
+        recipe.setId(1L);
+        recipe.setTitle("Pasta Carbonara");
+
+        when(recipeRepository.findById(1L))
+                .thenReturn(Optional.of(recipe));
+
+        Recipe result = recipeService.getRecipeById(1L);
+
+        assertEquals(1L, result.getId());
+        assertEquals("Pasta Carbonara", result.getTitle());
+
+        verify(recipeRepository).findById(1L);
+    }
+
+    @Test
+    void getRecipeByIdThrowsExceptionWhenNotFound() {
+
+        when(recipeRepository.findById(999L))
+                .thenReturn(Optional.empty());
+
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> recipeService.getRecipeById(999L)
+        );
+
+        assertEquals(404, exception.getStatusCode().value());
+
+        verify(recipeRepository).findById(999L);
+    }
+
+    @Test
+    void updateRecipeUpdatesExistingRecipe() {
+
+        Recipe existingRecipe = new Recipe();
+        existingRecipe.setId(1L);
+        existingRecipe.setTitle("Pasta Carbonara");
+        existingRecipe.setServings(2);
+
+        RecipeInputDto inputDto = new RecipeInputDto();
+        inputDto.setTitle("Vegetarische Pasta");
+        inputDto.setDescription("Pasta met groenten");
+        inputDto.setPreparationTime(15);
+        inputDto.setCookingTime(20);
+        inputDto.setServings(4);
+
+        when(recipeRepository.findById(1L))
+                .thenReturn(Optional.of(existingRecipe));
+
+        when(recipeRepository.save(any(Recipe.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        Recipe result = recipeService.updateRecipe(1L, inputDto);
+
+        assertEquals("Vegetarische Pasta", result.getTitle());
+        assertEquals("Pasta met groenten", result.getDescription());
+        assertEquals(4, result.getServings());
+
+        verify(recipeRepository).findById(1L);
+        verify(recipeRepository).save(existingRecipe);
+    }
+
+    @Test
+    void deleteRecipeDeletesExistingRecipe() {
+
+        Recipe recipe = new Recipe();
+        recipe.setId(1L);
+        recipe.setTitle("Pasta Carbonara");
+
+        when(recipeRepository.findById(1L))
+                .thenReturn(Optional.of(recipe));
+
+        recipeService.deleteRecipe(1L);
+
+        verify(recipeRepository).findById(1L);
+        verify(recipeRepository).delete(recipe);
+    }
+    @Test
+    void updateRecipeThrowsExceptionWhenNotFound() {
+        RecipeInputDto inputDto = new RecipeInputDto();
+        inputDto.setTitle("Pasta Carbonara");
+
+        when(recipeRepository.findById(999L))
+                .thenReturn(Optional.empty());
+
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> recipeService.updateRecipe(999L, inputDto)
+        );
+
+        assertEquals(404, exception.getStatusCode().value());
+
+        verify(recipeRepository).findById(999L);
+        verify(recipeRepository, never()).save(any(Recipe.class));
+    }
+    @Test
+    void deleteRecipeThrowsExceptionWhenNotFound() {
+        when(recipeRepository.findById(999L))
+                .thenReturn(Optional.empty());
+
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> recipeService.deleteRecipe(999L)
+        );
+
+        assertEquals(404, exception.getStatusCode().value());
+
+        verify(recipeRepository).findById(999L);
+        verify(recipeRepository, never()).delete(any(Recipe.class));
+    }
+}
