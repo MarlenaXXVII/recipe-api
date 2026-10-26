@@ -2,6 +2,8 @@ package nl.novi.recipeapi.dto;
 
 import nl.novi.recipeapi.model.Difficulty;
 
+import java.util.Set;
+
 public class RecipeInputDto {
 
     private String title;
@@ -16,6 +18,8 @@ public class RecipeInputDto {
     private Double protein;
     private Double carbs;
     private Double fat;
+    private Set<Long> categoryIds;
+
 
     public RecipeInputDto() {
     }
@@ -115,4 +119,13 @@ public class RecipeInputDto {
     public void setFat(Double fat) {
         this.fat = fat;
     }
+
+    public Set<Long> getCategoryIds() {
+        return categoryIds;
+    }
+
+    public void setCategoryIds(Set<Long> categoryIds) {
+        this.categoryIds = categoryIds;
+    }
+
 }
