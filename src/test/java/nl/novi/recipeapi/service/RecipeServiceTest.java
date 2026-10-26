@@ -4,6 +4,8 @@ package nl.novi.recipeapi.service;
 import nl.novi.recipeapi.dto.RecipeInputDto;
 import nl.novi.recipeapi.model.Recipe;
 import nl.novi.recipeapi.repository.RecipeRepository;
+import nl.novi.recipeapi.model.Category;
+import nl.novi.recipeapi.repository.CategoryRepository;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,13 +14,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.server.ResponseStatusException;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -26,6 +28,9 @@ class RecipeServiceTest {
 
     @Mock
     private RecipeRepository recipeRepository;
+
+    @Mock
+    private CategoryRepository categoryRepository;
 
     @InjectMocks
     private RecipeService recipeService;
@@ -150,6 +155,7 @@ class RecipeServiceTest {
         verify(recipeRepository).findById(1L);
         verify(recipeRepository).delete(recipe);
     }
+
     @Test
     void updateRecipeThrowsExceptionWhenNotFound() {
         RecipeInputDto inputDto = new RecipeInputDto();
@@ -168,6 +174,7 @@ class RecipeServiceTest {
         verify(recipeRepository).findById(999L);
         verify(recipeRepository, never()).save(any(Recipe.class));
     }
+
     @Test
     void deleteRecipeThrowsExceptionWhenNotFound() {
         when(recipeRepository.findById(999L))
@@ -182,5 +189,56 @@ class RecipeServiceTest {
 
         verify(recipeRepository).findById(999L);
         verify(recipeRepository, never()).delete(any(Recipe.class));
+    }
+
+    @Test
+    void createRecipeWithCategoriesSavesCategories() {
+        RecipeInputDto inputDto = new RecipeInputDto();
+        inputDto.setTitle("Pasta");
+        inputDto.setCategoryIds(Set.of(1L, 2L));
+
+        Category dinner = new Category();
+        dinner.setId(1L);
+        dinner.setName("Diner");
+
+        Category lunch = new Category();
+        lunch.setId(2L);
+        lunch.setName("Lunch");
+
+        when(categoryRepository.findById(1L))
+                .thenReturn(Optional.of(dinner));
+
+        when(categoryRepository.findById(2L))
+                .thenReturn(Optional.of(lunch));
+
+        when(recipeRepository.save(any(Recipe.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        Recipe result = recipeService.createRecipe(inputDto);
+
+        assertEquals(2, result.getCategories().size());
+        assertTrue(result.getCategories().contains(dinner));
+        assertTrue(result.getCategories().contains(lunch));
+
+        verify(recipeRepository).save(any(Recipe.class));
+    }
+
+    @Test
+    void createRecipeThrowsExceptionWhenCategoryNotFound() {
+        RecipeInputDto inputDto = new RecipeInputDto();
+        inputDto.setTitle("Pasta");
+        inputDto.setCategoryIds(Set.of(999L));
+
+        when(categoryRepository.findById(999L))
+                .thenReturn(Optional.empty());
+
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> recipeService.createRecipe(inputDto)
+        );
+
+        assertEquals(404, exception.getStatusCode().value());
+
+        verify(recipeRepository, never()).save(any(Recipe.class));
     }
 }
