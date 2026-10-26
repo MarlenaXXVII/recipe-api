@@ -105,4 +105,15 @@ public class RecipeService {
         return categories;
     }
 
+    public List<Recipe> getRecipesByCategory(Long categoryId) {
+        if (!categoryRepository.existsById(categoryId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Category not found with id: " + categoryId
+            );
+        }
+
+        return recipeRepository.findByCategories_Id(categoryId);
+    }
+
 }

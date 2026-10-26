@@ -241,4 +241,55 @@ class RecipeServiceTest {
 
         verify(recipeRepository, never()).save(any(Recipe.class));
     }
+
+    @Test
+    void getRecipesByCategoryReturnsRecipes() {
+        Recipe recipe = new Recipe();
+        recipe.setId(1L);
+        recipe.setTitle("Pasta met tomatensaus");
+
+        when(categoryRepository.existsById(2L))
+                .thenReturn(true);
+
+        when(recipeRepository.findByCategories_Id(2L))
+                .thenReturn(List.of(recipe));
+
+        List<Recipe> result = recipeService.getRecipesByCategory(2L);
+
+        assertEquals(1, result.size());
+        assertEquals("Pasta met tomatensaus", result.get(0).getTitle());
+
+        verify(recipeRepository).findByCategories_Id(2L);
+    }
+
+    @Test
+    void getRecipesByCategoryThrowsExceptionWhenCategoryNotFound() {
+        when(categoryRepository.existsById(999L))
+                .thenReturn(false);
+
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> recipeService.getRecipesByCategory(999L)
+        );
+
+        assertEquals(404, exception.getStatusCode().value());
+
+        verify(recipeRepository, never()).findByCategories_Id(999L);
+    }
+
+    @Test
+    void getRecipesByCategoryReturnsEmptyList() {
+        when(categoryRepository.existsById(3L))
+                .thenReturn(true);
+
+        when(recipeRepository.findByCategories_Id(3L))
+                .thenReturn(List.of());
+
+        List<Recipe> result = recipeService.getRecipesByCategory(3L);
+
+        assertTrue(result.isEmpty());
+
+        verify(recipeRepository).findByCategories_Id(3L);
+    }
+
 }
