@@ -1,6 +1,9 @@
 package nl.novi.recipeapi.model;
 
 import jakarta.persistence.*;
+import java.util.HashSet;
+import java.util.Set;
+
 
 @Entity
 @Table(name = "recipes")
@@ -37,6 +40,14 @@ public class Recipe {
     private Double carbs;
 
     private Double fat;
+
+    @ManyToMany
+    @JoinTable(
+            name = "recipe_categories",
+            joinColumns = @JoinColumn(name = "recipe_id"),
+            inverseJoinColumns = @JoinColumn(name = "category_id")
+    )
+    private Set<Category> categories = new HashSet<>();
 
     public Recipe() {
     }
@@ -152,5 +163,13 @@ public class Recipe {
 
     public void setFat(Double fat) {
         this.fat = fat;
+    }
+
+    public Set<Category> getCategories() {
+        return categories;
+    }
+
+    public void setCategories(Set<Category> categories) {
+        this.categories = categories;
     }
 }
