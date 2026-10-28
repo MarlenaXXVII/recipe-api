@@ -2,29 +2,34 @@
 package nl.novi.recipeapi.service;
 
 import nl.novi.recipeapi.dto.RecipeInputDto;
-import nl.novi.recipeapi.model.Recipe;
-import nl.novi.recipeapi.repository.RecipeRepository;
+import nl.novi.recipeapi.model.AppUser;
 import nl.novi.recipeapi.model.Category;
+import nl.novi.recipeapi.model.Profile;
+import nl.novi.recipeapi.model.Recipe;
 import nl.novi.recipeapi.repository.CategoryRepository;
-
+import nl.novi.recipeapi.repository.ProfileRepository;
+import nl.novi.recipeapi.repository.RecipeRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.server.ResponseStatusException;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class RecipeServiceTest {
+
+    private static final String USER_ID = "keycloak-user-123";
+    private static final String OTHER_USER_ID = "keycloak-user-456";
 
     @Mock
     private RecipeRepository recipeRepository;
@@ -32,17 +37,42 @@ class RecipeServiceTest {
     @Mock
     private CategoryRepository categoryRepository;
 
+    @Mock
+    private ProfileRepository profileRepository;
+
     @InjectMocks
     private RecipeService recipeService;
 
+    private Profile createProfile(String keycloakId) {
+        AppUser user = new AppUser(keycloakId, keycloakId + "@example.com");
+        return new Profile("user-" + keycloakId, user);
+    }
+
+    private Recipe createOwnedRecipe(String keycloakId) {
+        Recipe recipe = new Recipe();
+        recipe.setId(1L);
+        recipe.setTitle("Pasta Carbonara");
+        recipe.setOwner(createProfile(keycloakId));
+        return recipe;
+    }
+
+    private RecipeInputDto createInputDto() {
+        RecipeInputDto inputDto = new RecipeInputDto();
+        inputDto.setTitle("Vegetarische Pasta");
+        inputDto.setDescription("Pasta met groenten");
+        inputDto.setPreparationTime(15);
+        inputDto.setCookingTime(20);
+        inputDto.setServings(4);
+        inputDto.setInstructions("Kook de pasta.");
+        return inputDto;
+    }
+
     @Test
     void getAllRecipesReturnsAllRecipes() {
-
         Recipe recipe = new Recipe();
         recipe.setTitle("Pasta Carbonara");
 
-        when(recipeRepository.findAll())
-                .thenReturn(List.of(recipe));
+        when(recipeRepository.findAll()).thenReturn(List.of(recipe));
 
         List<Recipe> result = recipeService.getAllRecipes();
 
@@ -51,36 +81,48 @@ class RecipeServiceTest {
     }
 
     @Test
-    void createRecipeSavesRecipe() {
+    void createRecipeSavesRecipeWithCorrectOwner() {
+        RecipeInputDto inputDto = createInputDto();
+        Profile profile = createProfile(USER_ID);
 
-        RecipeInputDto inputDto = new RecipeInputDto();
-        inputDto.setTitle("Pasta Carbonara");
-        inputDto.setDescription("Een Italiaans pastagerecht");
-        inputDto.setPreparationTime(15);
-        inputDto.setCookingTime(20);
-        inputDto.setServings(2);
-
-        Recipe savedRecipe = new Recipe();
-        savedRecipe.setId(1L);
-        savedRecipe.setTitle("Pasta Carbonara");
+        when(profileRepository.findByUser_KeycloakId(USER_ID))
+                .thenReturn(Optional.of(profile));
 
         when(recipeRepository.save(any(Recipe.class)))
-                .thenReturn(savedRecipe);
+                .thenAnswer(invocation -> {
+                    Recipe recipe = invocation.getArgument(0);
+                    recipe.setId(1L);
+                    return recipe;
+                });
 
-        Recipe result = recipeService.createRecipe(inputDto);
+        Recipe result = recipeService.createRecipe(inputDto, USER_ID);
 
         assertEquals(1L, result.getId());
-        assertEquals("Pasta Carbonara", result.getTitle());
+        assertEquals("Vegetarische Pasta", result.getTitle());
+        assertSame(profile, result.getOwner());
 
         verify(recipeRepository).save(any(Recipe.class));
     }
 
     @Test
-    void getRecipeByIdReturnsRecipe() {
+    void createRecipeThrowsExceptionWhenProfileNotFound() {
+        RecipeInputDto inputDto = createInputDto();
 
-        Recipe recipe = new Recipe();
-        recipe.setId(1L);
-        recipe.setTitle("Pasta Carbonara");
+        when(profileRepository.findByUser_KeycloakId(USER_ID))
+                .thenReturn(Optional.empty());
+
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> recipeService.createRecipe(inputDto, USER_ID)
+        );
+
+        assertEquals(404, exception.getStatusCode().value());
+        verify(recipeRepository, never()).save(any(Recipe.class));
+    }
+
+    @Test
+    void getRecipeByIdReturnsRecipe() {
+        Recipe recipe = createOwnedRecipe(USER_ID);
 
         when(recipeRepository.findById(1L))
                 .thenReturn(Optional.of(recipe));
@@ -89,13 +131,10 @@ class RecipeServiceTest {
 
         assertEquals(1L, result.getId());
         assertEquals("Pasta Carbonara", result.getTitle());
-
-        verify(recipeRepository).findById(1L);
     }
 
     @Test
     void getRecipeByIdThrowsExceptionWhenNotFound() {
-
         when(recipeRepository.findById(999L))
                 .thenReturn(Optional.empty());
 
@@ -105,24 +144,38 @@ class RecipeServiceTest {
         );
 
         assertEquals(404, exception.getStatusCode().value());
-
-        verify(recipeRepository).findById(999L);
     }
 
     @Test
-    void updateRecipeUpdatesExistingRecipe() {
+    void getMyRecipesReturnsOnlyOwnRecipes() {
+        Recipe recipe = createOwnedRecipe(USER_ID);
 
-        Recipe existingRecipe = new Recipe();
-        existingRecipe.setId(1L);
-        existingRecipe.setTitle("Pasta Carbonara");
-        existingRecipe.setServings(2);
+        when(recipeRepository.findByOwner_User_KeycloakId(USER_ID))
+                .thenReturn(List.of(recipe));
 
-        RecipeInputDto inputDto = new RecipeInputDto();
-        inputDto.setTitle("Vegetarische Pasta");
-        inputDto.setDescription("Pasta met groenten");
-        inputDto.setPreparationTime(15);
-        inputDto.setCookingTime(20);
-        inputDto.setServings(4);
+        List<Recipe> result = recipeService.getMyRecipes(USER_ID);
+
+        assertEquals(1, result.size());
+        assertEquals(USER_ID,
+                result.get(0).getOwner().getUser().getKeycloakId());
+
+        verify(recipeRepository).findByOwner_User_KeycloakId(USER_ID);
+    }
+
+    @Test
+    void getMyRecipesReturnsEmptyList() {
+        when(recipeRepository.findByOwner_User_KeycloakId(USER_ID))
+                .thenReturn(List.of());
+
+        List<Recipe> result = recipeService.getMyRecipes(USER_ID);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void updateRecipeUpdatesOwnRecipe() {
+        Recipe existingRecipe = createOwnedRecipe(USER_ID);
+        RecipeInputDto inputDto = createInputDto();
 
         when(recipeRepository.findById(1L))
                 .thenReturn(Optional.of(existingRecipe));
@@ -130,72 +183,140 @@ class RecipeServiceTest {
         when(recipeRepository.save(any(Recipe.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        Recipe result = recipeService.updateRecipe(1L, inputDto);
+        Recipe result = recipeService.updateRecipe(
+                1L, inputDto, USER_ID, false
+        );
 
         assertEquals("Vegetarische Pasta", result.getTitle());
         assertEquals("Pasta met groenten", result.getDescription());
         assertEquals(4, result.getServings());
 
-        verify(recipeRepository).findById(1L);
         verify(recipeRepository).save(existingRecipe);
     }
 
     @Test
-    void deleteRecipeDeletesExistingRecipe() {
-
-        Recipe recipe = new Recipe();
-        recipe.setId(1L);
-        recipe.setTitle("Pasta Carbonara");
+    void updateRecipeThrowsForbiddenForOtherUser() {
+        Recipe recipe = createOwnedRecipe(OTHER_USER_ID);
+        RecipeInputDto inputDto = createInputDto();
 
         when(recipeRepository.findById(1L))
                 .thenReturn(Optional.of(recipe));
 
-        recipeService.deleteRecipe(1L);
-
-        verify(recipeRepository).findById(1L);
-        verify(recipeRepository).delete(recipe);
-    }
-
-    @Test
-    void updateRecipeThrowsExceptionWhenNotFound() {
-        RecipeInputDto inputDto = new RecipeInputDto();
-        inputDto.setTitle("Pasta Carbonara");
-
-        when(recipeRepository.findById(999L))
-                .thenReturn(Optional.empty());
-
         ResponseStatusException exception = assertThrows(
                 ResponseStatusException.class,
-                () -> recipeService.updateRecipe(999L, inputDto)
+                () -> recipeService.updateRecipe(
+                        1L, inputDto, USER_ID, false
+                )
         );
 
-        assertEquals(404, exception.getStatusCode().value());
-
-        verify(recipeRepository).findById(999L);
+        assertEquals(403, exception.getStatusCode().value());
         verify(recipeRepository, never()).save(any(Recipe.class));
     }
 
     @Test
-    void deleteRecipeThrowsExceptionWhenNotFound() {
+    void adminCanUpdateOtherUsersRecipe() {
+        Recipe recipe = createOwnedRecipe(OTHER_USER_ID);
+        RecipeInputDto inputDto = createInputDto();
+
+        when(recipeRepository.findById(1L))
+                .thenReturn(Optional.of(recipe));
+
+        when(recipeRepository.save(any(Recipe.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        Recipe result = recipeService.updateRecipe(
+                1L, inputDto, USER_ID, true
+        );
+
+        assertEquals("Vegetarische Pasta", result.getTitle());
+        assertEquals(OTHER_USER_ID,
+                result.getOwner().getUser().getKeycloakId());
+
+        verify(recipeRepository).save(recipe);
+    }
+
+    @Test
+    void updateRecipeThrowsNotFound() {
+        RecipeInputDto inputDto = createInputDto();
+
         when(recipeRepository.findById(999L))
                 .thenReturn(Optional.empty());
 
         ResponseStatusException exception = assertThrows(
                 ResponseStatusException.class,
-                () -> recipeService.deleteRecipe(999L)
+                () -> recipeService.updateRecipe(
+                        999L, inputDto, USER_ID, false
+                )
         );
 
         assertEquals(404, exception.getStatusCode().value());
+        verify(recipeRepository, never()).save(any(Recipe.class));
+    }
 
-        verify(recipeRepository).findById(999L);
+    @Test
+    void deleteRecipeDeletesOwnRecipe() {
+        Recipe recipe = createOwnedRecipe(USER_ID);
+
+        when(recipeRepository.findById(1L))
+                .thenReturn(Optional.of(recipe));
+
+        recipeService.deleteRecipe(1L, USER_ID, false);
+
+        verify(recipeRepository).delete(recipe);
+    }
+
+    @Test
+    void deleteRecipeThrowsForbiddenForOtherUser() {
+        Recipe recipe = createOwnedRecipe(OTHER_USER_ID);
+
+        when(recipeRepository.findById(1L))
+                .thenReturn(Optional.of(recipe));
+
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> recipeService.deleteRecipe(
+                        1L, USER_ID, false
+                )
+        );
+
+        assertEquals(403, exception.getStatusCode().value());
+        verify(recipeRepository, never()).delete(any(Recipe.class));
+    }
+
+    @Test
+    void adminCanDeleteOtherUsersRecipe() {
+        Recipe recipe = createOwnedRecipe(OTHER_USER_ID);
+
+        when(recipeRepository.findById(1L))
+                .thenReturn(Optional.of(recipe));
+
+        recipeService.deleteRecipe(1L, USER_ID, true);
+
+        verify(recipeRepository).delete(recipe);
+    }
+
+    @Test
+    void deleteRecipeThrowsNotFound() {
+        when(recipeRepository.findById(999L))
+                .thenReturn(Optional.empty());
+
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> recipeService.deleteRecipe(
+                        999L, USER_ID, true
+                )
+        );
+
+        assertEquals(404, exception.getStatusCode().value());
         verify(recipeRepository, never()).delete(any(Recipe.class));
     }
 
     @Test
     void createRecipeWithCategoriesSavesCategories() {
-        RecipeInputDto inputDto = new RecipeInputDto();
-        inputDto.setTitle("Pasta");
+        RecipeInputDto inputDto = createInputDto();
         inputDto.setCategoryIds(Set.of(1L, 2L));
+
+        Profile profile = createProfile(USER_ID);
 
         Category dinner = new Category();
         dinner.setId(1L);
@@ -204,6 +325,9 @@ class RecipeServiceTest {
         Category lunch = new Category();
         lunch.setId(2L);
         lunch.setName("Lunch");
+
+        when(profileRepository.findByUser_KeycloakId(USER_ID))
+                .thenReturn(Optional.of(profile));
 
         when(categoryRepository.findById(1L))
                 .thenReturn(Optional.of(dinner));
@@ -214,39 +338,36 @@ class RecipeServiceTest {
         when(recipeRepository.save(any(Recipe.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        Recipe result = recipeService.createRecipe(inputDto);
+        Recipe result = recipeService.createRecipe(inputDto, USER_ID);
 
         assertEquals(2, result.getCategories().size());
         assertTrue(result.getCategories().contains(dinner));
         assertTrue(result.getCategories().contains(lunch));
-
-        verify(recipeRepository).save(any(Recipe.class));
     }
 
     @Test
     void createRecipeThrowsExceptionWhenCategoryNotFound() {
-        RecipeInputDto inputDto = new RecipeInputDto();
-        inputDto.setTitle("Pasta");
+        RecipeInputDto inputDto = createInputDto();
         inputDto.setCategoryIds(Set.of(999L));
+
+        when(profileRepository.findByUser_KeycloakId(USER_ID))
+                .thenReturn(Optional.of(createProfile(USER_ID)));
 
         when(categoryRepository.findById(999L))
                 .thenReturn(Optional.empty());
 
         ResponseStatusException exception = assertThrows(
                 ResponseStatusException.class,
-                () -> recipeService.createRecipe(inputDto)
+                () -> recipeService.createRecipe(inputDto, USER_ID)
         );
 
         assertEquals(404, exception.getStatusCode().value());
-
         verify(recipeRepository, never()).save(any(Recipe.class));
     }
 
     @Test
     void getRecipesByCategoryReturnsRecipes() {
-        Recipe recipe = new Recipe();
-        recipe.setId(1L);
-        recipe.setTitle("Pasta met tomatensaus");
+        Recipe recipe = createOwnedRecipe(USER_ID);
 
         when(categoryRepository.existsById(2L))
                 .thenReturn(true);
@@ -257,9 +378,7 @@ class RecipeServiceTest {
         List<Recipe> result = recipeService.getRecipesByCategory(2L);
 
         assertEquals(1, result.size());
-        assertEquals("Pasta met tomatensaus", result.get(0).getTitle());
-
-        verify(recipeRepository).findByCategories_Id(2L);
+        assertEquals("Pasta Carbonara", result.get(0).getTitle());
     }
 
     @Test
@@ -273,7 +392,6 @@ class RecipeServiceTest {
         );
 
         assertEquals(404, exception.getStatusCode().value());
-
         verify(recipeRepository, never()).findByCategories_Id(999L);
     }
 
@@ -288,8 +406,5 @@ class RecipeServiceTest {
         List<Recipe> result = recipeService.getRecipesByCategory(3L);
 
         assertTrue(result.isEmpty());
-
-        verify(recipeRepository).findByCategories_Id(3L);
     }
-
 }

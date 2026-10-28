@@ -49,6 +49,10 @@ public class Recipe {
     )
     private Set<Category> categories = new HashSet<>();
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_profile_id")
+    private Profile owner;
+
     public Recipe() {
     }
 
@@ -171,5 +175,13 @@ public class Recipe {
 
     public void setCategories(Set<Category> categories) {
         this.categories = categories;
+    }
+
+    public Profile getOwner() {
+        return owner;
+    }
+
+    public void setOwner(Profile owner) {
+        this.owner = owner;
     }
 }

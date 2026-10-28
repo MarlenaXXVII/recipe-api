@@ -2,6 +2,9 @@ package nl.novi.recipeapi.service;
 
 import nl.novi.recipeapi.model.Recipe;
 import nl.novi.recipeapi.repository.RecipeRepository;
+import nl.novi.recipeapi.model.Profile;
+import nl.novi.recipeapi.repository.ProfileRepository;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import nl.novi.recipeapi.dto.RecipeInputDto;
@@ -11,7 +14,6 @@ import nl.novi.recipeapi.repository.CategoryRepository;
 import java.util.HashSet;
 import java.util.Set;
 
-
 import java.util.List;
 
 @Service
@@ -19,22 +21,30 @@ public class RecipeService {
 
     private final RecipeRepository recipeRepository;
     private final CategoryRepository categoryRepository;
+    private final ProfileRepository profileRepository;
 
     public RecipeService(
             RecipeRepository recipeRepository,
-            CategoryRepository categoryRepository) {
+            CategoryRepository categoryRepository,
+            ProfileRepository profileRepository) {
         this.recipeRepository = recipeRepository;
         this.categoryRepository = categoryRepository;
+        this.profileRepository = profileRepository;
     }
 
 
     public List<Recipe> getAllRecipes() {
         return recipeRepository.findAll();
     }
-    public Recipe createRecipe(RecipeInputDto recipeInputDto) {
-
+    public Recipe createRecipe(RecipeInputDto recipeInputDto, String keycloakId) {
         Recipe recipe = new Recipe();
+        Profile profile = profileRepository.findByUser_KeycloakId(keycloakId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Profile not found."
+                ));
 
+        recipe.setOwner(profile);
         recipe.setTitle(recipeInputDto.getTitle());
         recipe.setDescription(recipeInputDto.getDescription());
         recipe.setPreparationTime(recipeInputDto.getPreparationTime());
@@ -55,12 +65,17 @@ public class RecipeService {
         return recipeRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
-                        "Recipe not found with id: " + id
+                        "We couldn't find the recipe with id: " + id
                 ));
     }
-    public Recipe updateRecipe(Long id, RecipeInputDto recipeInputDto) {
+    @Transactional
+    public Recipe updateRecipe(
+            Long id,
+            RecipeInputDto recipeInputDto,
+            String keycloakId,
+            boolean isAdmin) {
         Recipe recipe = getRecipeById(id);
-
+        checkRecipeAccess(recipe, keycloakId, isAdmin);
         recipe.setTitle(recipeInputDto.getTitle());
         recipe.setDescription(recipeInputDto.getDescription());
         recipe.setPreparationTime(recipeInputDto.getPreparationTime());
@@ -80,8 +95,10 @@ public class RecipeService {
 
         return recipeRepository.save(recipe);
     }
-    public void deleteRecipe(Long id) {
+    @Transactional
+    public void deleteRecipe(Long id, String keycloakId, boolean isAdmin) {
         Recipe recipe = getRecipeById(id);
+        checkRecipeAccess(recipe, keycloakId, isAdmin);
         recipeRepository.delete(recipe);
     }
 
@@ -115,5 +132,21 @@ public class RecipeService {
 
         return recipeRepository.findByCategories_Id(categoryId);
     }
+    private void checkRecipeAccess(Recipe recipe, String keycloakId, boolean isAdmin) {
+        if (isAdmin) {
+            return;
+        }
 
+        if (recipe.getOwner() == null ||
+                !recipe.getOwner().getUser().getKeycloakId().equals(keycloakId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "You can only edit or delete your own recipes"
+            );
+        }
+    }
+    @Transactional(readOnly = true)
+    public List<Recipe> getMyRecipes(String keycloakId) {
+        return recipeRepository.findByOwner_User_KeycloakId(keycloakId);
+    }
 }

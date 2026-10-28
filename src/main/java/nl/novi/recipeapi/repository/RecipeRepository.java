@@ -8,5 +8,6 @@ import java.util.List;
 public interface RecipeRepository extends JpaRepository<Recipe, Long> {
 
     List<Recipe> findByCategories_Id(Long categoryId);
-
+    
+    List<Recipe> findByOwner_User_KeycloakId(String keycloakId);
 }

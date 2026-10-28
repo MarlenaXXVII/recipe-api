@@ -1,23 +1,56 @@
 package nl.novi.recipeapi.dto;
 
 import nl.novi.recipeapi.model.Difficulty;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Size;
 
 import java.util.Set;
 
 public class RecipeInputDto {
 
+    @NotBlank(message = "Please enter a recipe title.")
+    @Size(max = 255, message = "Your recipe title is too long.")
     private String title;
+
+    @NotBlank(message = "Please enter a recipe description.")
+    @Size(max = 2000, message = "Your description is too long.")
     private String description;
+
+    @NotNull(message = "Please enter a preparation time.")
+    @Min(value = 1, message = "Preparation time must be at least 1 minute.")
     private Integer preparationTime;
+
+    @NotNull(message = "Please enter a cooking time.")
+    @Min(value = 1, message = "Cooking time must be at least 1 minute.")
     private Integer cookingTime;
+
+    @NotNull(message = "Please enter the number of servings.")
+    @Min(value = 1, message = "Please enter at least 1 serving.")
     private Integer servings;
+
     private String image;
+
+    @NotNull(message = "Please select a difficulty.")
     private Difficulty difficulty;
+
+    @NotBlank(message = "Please add the cooking instructions.")
     private String instructions;
+
+    @Min(value = 0, message = "Calories can't be negative.")
     private Integer calories;
+
+    @DecimalMin(value = "0.0", message = "Protein can't be negative.")
     private Double protein;
+
+    @DecimalMin(value = "0.0", message = "Carbs can't be negative.")
     private Double carbs;
+
+    @DecimalMin(value = "0.0", message = "Fat can't be negative.")
     private Double fat;
+
     private Set<Long> categoryIds;
 
 
