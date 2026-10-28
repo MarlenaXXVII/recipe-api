@@ -1,4 +1,3 @@
-
 package nl.novi.recipeapi.dto;
 
 public class CategoryInputDto {

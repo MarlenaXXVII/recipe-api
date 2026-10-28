@@ -1,4 +1,3 @@
-
 package nl.novi.recipeapi.model;
 
 import jakarta.persistence.*;
