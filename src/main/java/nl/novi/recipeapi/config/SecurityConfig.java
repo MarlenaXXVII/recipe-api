@@ -38,6 +38,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/recipes/**").hasAnyRole("USER", "ADMIN")
                         .requestMatchers(HttpMethod.GET, "/profiles/me").hasAnyRole("USER", "ADMIN")
                         .requestMatchers(HttpMethod.POST, "/profiles").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/weekmenu").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/weekmenu").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/weekmenu/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/weekmenu/**").hasAnyRole("USER", "ADMIN")
                         .anyRequest().denyAll()
                 )
                 .exceptionHandling(exceptions -> exceptions
@@ -98,7 +102,7 @@ public class SecurityConfig {
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 
             response.getWriter().write(
-                    "{\"message\":\"You're dont have permission to do that.\"}"
+                    "{\"message\":\"You dont have permission to do that.\"}"
             );
         };
     }
