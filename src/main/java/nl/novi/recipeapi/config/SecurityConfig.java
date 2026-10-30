@@ -30,9 +30,10 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.GET, "/recipes/myrecipes").hasAnyRole("USER", "ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/recipes/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/recipes", "/recipes/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/ingredients/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/categories/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/categories").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/recipes/**").hasAnyRole("USER", "ADMIN")
                         .requestMatchers(HttpMethod.POST, "/recipes/**").hasAnyRole("USER", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/recipes/**").hasAnyRole("USER", "ADMIN")
@@ -42,6 +43,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/weekmenu").hasAnyRole("USER", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/weekmenu/**").hasAnyRole("USER", "ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/weekmenu/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/shopping-list").hasAnyRole("USER", "ADMIN")
                         .anyRequest().denyAll()
                 )
                 .exceptionHandling(exceptions -> exceptions

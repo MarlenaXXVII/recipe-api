@@ -2,12 +2,9 @@ package nl.novi.recipeapi.dto;
 
 public class ProfileOutputDto {
 
-    private Long id;
-    private String username;
-    private String email;
-
-    public ProfileOutputDto() {
-    }
+    private final Long id;
+    private final String username;
+    private final String email;
 
     public ProfileOutputDto(Long id, String username, String email) {
         this.id = id;
@@ -19,23 +16,11 @@ public class ProfileOutputDto {
         return id;
     }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
     public String getUsername() {
         return username;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
     public String getEmail() {
         return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
     }
 }

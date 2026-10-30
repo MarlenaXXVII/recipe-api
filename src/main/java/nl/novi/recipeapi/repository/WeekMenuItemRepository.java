@@ -17,4 +17,10 @@ public interface WeekMenuItemRepository extends JpaRepository<WeekMenuItem, Long
             LocalDate date,
             nl.novi.recipeapi.model.MealType mealType
     );
+
+    List<WeekMenuItem> findByProfile_User_KeycloakIdAndDateBetweenOrderByDateAsc(
+            String keycloakId,
+            LocalDate startDate,
+            LocalDate endDate
+    );
 }

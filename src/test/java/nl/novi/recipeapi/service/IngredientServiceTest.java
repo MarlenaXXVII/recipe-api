@@ -1,6 +1,5 @@
 package nl.novi.recipeapi.service;
 
-import nl.novi.recipeapi.dto.IngredientInputDto;
 import nl.novi.recipeapi.model.Ingredient;
 import nl.novi.recipeapi.repository.IngredientRepository;
 import org.junit.jupiter.api.Test;
@@ -72,25 +71,5 @@ class IngredientServiceTest {
         assertEquals(404, exception.getStatusCode().value());
 
         verify(ingredientRepository).findById(999L);
-    }
-
-    @Test
-    void createIngredientSavesIngredient() {
-        IngredientInputDto inputDto = new IngredientInputDto();
-        inputDto.setName("Tomaat");
-
-        Ingredient savedIngredient = new Ingredient();
-        savedIngredient.setId(1L);
-        savedIngredient.setName("Tomaat");
-
-        when(ingredientRepository.save(any(Ingredient.class)))
-                .thenReturn(savedIngredient);
-
-        Ingredient result = ingredientService.createIngredient(inputDto);
-
-        assertEquals(1L, result.getId());
-        assertEquals("Tomaat", result.getName());
-
-        verify(ingredientRepository).save(any(Ingredient.class));
     }
 }

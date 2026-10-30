@@ -1,6 +1,7 @@
 package nl.novi.recipeapi.controller;
 
 import jakarta.validation.Valid;
+import nl.novi.recipeapi.dto.RecipeOutputDto;
 import nl.novi.recipeapi.model.Recipe;
 import nl.novi.recipeapi.service.RecipeService;
 import nl.novi.recipeapi.dto.RecipeInputDto;
@@ -25,32 +26,23 @@ public class RecipeController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Recipe>> getAllRecipes(
-            @RequestParam(required = false) Long categoryId) {
-
-        if (categoryId != null) {
-            return ResponseEntity.ok(
-                    recipeService.getRecipesByCategory(categoryId)
-            );
-        }
-
-        return ResponseEntity.ok(recipeService.getAllRecipes());
+    public ResponseEntity<List<RecipeOutputDto>> getAllRecipes() {
+        return ResponseEntity.ok(recipeService.getAllRecipeOutputs());
     }
     @GetMapping("/myrecipes")
-    public ResponseEntity<List<Recipe>> getMyRecipes(
+    public ResponseEntity<List<RecipeOutputDto>> getMyRecipes(
             @AuthenticationPrincipal Jwt jwt) {
 
         return ResponseEntity.ok(
-                recipeService.getMyRecipes(jwt.getSubject())
+                recipeService.getMyRecipeOutputs(jwt.getSubject())
         );
     }
     @GetMapping("/{id}")
-    public ResponseEntity<Recipe> getRecipeById(@PathVariable Long id) {
-        Recipe recipe = recipeService.getRecipeById(id);
-        return ResponseEntity.ok(recipe);
+    public ResponseEntity<RecipeOutputDto> getRecipeById(@PathVariable Long id) {
+        return ResponseEntity.ok(recipeService.getRecipeOutputById(id));
     }
     @PostMapping
-    public ResponseEntity<Recipe> createRecipe(
+    public ResponseEntity<RecipeOutputDto> createRecipe(
             @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody RecipeInputDto recipeInputDto) {
 
@@ -61,13 +53,14 @@ public class RecipeController {
 
         URI location = URI.create("/recipes/" + savedRecipe.getId());
 
-        return ResponseEntity.created(location).body(savedRecipe);
+        return ResponseEntity.created(location)
+                .body(recipeService.getRecipeOutputById(savedRecipe.getId()));
     }
     @PutMapping("/{id}")
     public ResponseEntity<Recipe> updateRecipe(
             @PathVariable Long id,
-            @RequestBody RecipeInputDto recipeInputDto,
-            @Valid @AuthenticationPrincipal Jwt jwt,
+            @Valid @RequestBody RecipeInputDto recipeInputDto,
+            @AuthenticationPrincipal Jwt jwt,
             Authentication authentication) {
 
         boolean isAdmin = authentication.getAuthorities().stream()
@@ -94,5 +87,13 @@ public class RecipeController {
         recipeService.deleteRecipe(id, jwt.getSubject(), isAdmin);
 
         return ResponseEntity.noContent().build();
+    }
+    @GetMapping("/category/{categoryId}")
+    public ResponseEntity<List<RecipeOutputDto>> getRecipesByCategory(
+            @PathVariable Long categoryId) {
+
+        return ResponseEntity.ok(
+                recipeService.getRecipeOutputsByCategory(categoryId)
+        );
     }
 }

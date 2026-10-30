@@ -12,9 +12,6 @@ public class WeekMenuItemOutputDto {
     private LocalDate date;
     private MealType mealType;
 
-    public WeekMenuItemOutputDto() {
-    }
-
     public WeekMenuItemOutputDto(
             Long id,
             Long recipeId,

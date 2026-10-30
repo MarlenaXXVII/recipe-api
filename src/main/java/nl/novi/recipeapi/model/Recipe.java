@@ -56,16 +56,6 @@ public class Recipe {
     public Recipe() {
     }
 
-    public Recipe(String title, String description,
-                  Integer preparationTime, Integer cookingTime,
-                  Integer servings) {
-        this.title = title;
-        this.description = description;
-        this.preparationTime = preparationTime;
-        this.cookingTime = cookingTime;
-        this.servings = servings;
-    }
-
     public Long getId() {
         return id;
     }

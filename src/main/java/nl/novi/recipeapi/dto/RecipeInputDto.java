@@ -1,12 +1,10 @@
 package nl.novi.recipeapi.dto;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
 import nl.novi.recipeapi.model.Difficulty;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.Size;
 
+import java.util.List;
 import java.util.Set;
 
 public class RecipeInputDto {
@@ -52,6 +50,10 @@ public class RecipeInputDto {
     private Double fat;
 
     private Set<Long> categoryIds;
+
+    @Valid
+    @NotEmpty(message = "Please add at least one ingredient.")
+    private List<RecipeIngredientFormDto> ingredients;
 
 
     public RecipeInputDto() {
@@ -159,6 +161,14 @@ public class RecipeInputDto {
 
     public void setCategoryIds(Set<Long> categoryIds) {
         this.categoryIds = categoryIds;
+    }
+
+    public List<RecipeIngredientFormDto> getIngredients() {
+        return ingredients;
+    }
+
+    public void setIngredients(List<RecipeIngredientFormDto> ingredients) {
+        this.ingredients = ingredients;
     }
 
 }
