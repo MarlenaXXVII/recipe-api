@@ -23,4 +23,6 @@ public interface WeekMenuItemRepository extends JpaRepository<WeekMenuItem, Long
             LocalDate startDate,
             LocalDate endDate
     );
+
+    void deleteByRecipe_Id(Long recipeId);
 }

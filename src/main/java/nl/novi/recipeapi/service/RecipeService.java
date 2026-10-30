@@ -1,23 +1,21 @@
 package nl.novi.recipeapi.service;
 
 import nl.novi.recipeapi.model.Recipe;
-import nl.novi.recipeapi.repository.RecipeRepository;
+import nl.novi.recipeapi.repository.*;
 import nl.novi.recipeapi.model.Profile;
-import nl.novi.recipeapi.repository.ProfileRepository;
 import nl.novi.recipeapi.model.Category;
-import nl.novi.recipeapi.repository.CategoryRepository;
 import nl.novi.recipeapi.dto.RecipeInputDto;
 import nl.novi.recipeapi.dto.RecipeIngredientFormDto;
 import nl.novi.recipeapi.model.Ingredient;
 import nl.novi.recipeapi.model.RecipeIngredient;
-import nl.novi.recipeapi.repository.IngredientRepository;
-import nl.novi.recipeapi.repository.RecipeIngredientRepository;
 import nl.novi.recipeapi.dto.RecipeOutputDto;
 import nl.novi.recipeapi.dto.RecipeIngredientOutputDto;
 
+import org.springframework.core.io.Resource;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.HashSet;
@@ -33,19 +31,25 @@ public class RecipeService {
     private final ProfileRepository profileRepository;
     private final IngredientRepository ingredientRepository;
     private final RecipeIngredientRepository recipeIngredientRepository;
+    private final WeekMenuItemRepository weekMenuItemRepository;
+    private final ImageService imageService;
 
     public RecipeService(
             RecipeRepository recipeRepository,
             CategoryRepository categoryRepository,
             ProfileRepository profileRepository,
             IngredientRepository ingredientRepository,
-            RecipeIngredientRepository recipeIngredientRepository) {
+            RecipeIngredientRepository recipeIngredientRepository,
+            WeekMenuItemRepository weekMenuItemRepository,
+            ImageService imageService) {
 
         this.recipeRepository = recipeRepository;
         this.categoryRepository = categoryRepository;
         this.profileRepository = profileRepository;
         this.ingredientRepository = ingredientRepository;
         this.recipeIngredientRepository = recipeIngredientRepository;
+        this.weekMenuItemRepository = weekMenuItemRepository;
+        this.imageService = imageService;
     }
 
 
@@ -116,7 +120,17 @@ public class RecipeService {
     public void deleteRecipe(Long id, String keycloakId, boolean isAdmin) {
         Recipe recipe = getRecipeById(id);
         checkRecipeAccess(recipe, keycloakId, isAdmin);
+
+        String imageFileName = recipe.getImage();
+
+        recipeIngredientRepository.deleteByRecipe_Id(id);
+        weekMenuItemRepository.deleteByRecipe_Id(id);
+
         recipeRepository.delete(recipe);
+
+        if (imageFileName != null && !imageFileName.isBlank()) {
+            imageService.deleteFile(imageFileName);
+        }
     }
 
     private Set<Category> getCategoriesByIds(Set<Long> categoryIds) {
@@ -255,7 +269,6 @@ public class RecipeService {
         recipe.setPreparationTime(recipeInputDto.getPreparationTime());
         recipe.setCookingTime(recipeInputDto.getCookingTime());
         recipe.setServings(recipeInputDto.getServings());
-        recipe.setImage(recipeInputDto.getImage());
         recipe.setDifficulty(recipeInputDto.getDifficulty());
         recipe.setInstructions(recipeInputDto.getInstructions());
         recipe.setCalories(recipeInputDto.getCalories());
@@ -271,5 +284,26 @@ public class RecipeService {
         }
 
         return result;
+    }
+    @Transactional
+    public Recipe uploadRecipeImage(Long recipeId, MultipartFile file, String keycloakId, boolean isAdmin) {
+        Recipe recipe = getRecipeById(recipeId);
+        checkRecipeAccess(recipe, keycloakId, isAdmin);
+
+        String oldFileName = recipe.getImage();
+        String newFileName = imageService.storeFile(file);
+
+        recipe.setImage(newFileName);
+        Recipe savedRecipe = recipeRepository.save(recipe);
+
+        if (oldFileName != null && !oldFileName.isBlank()) {
+            imageService.deleteFile(oldFileName);
+        }
+
+        return savedRecipe;
+    }
+    public Resource getRecipeImage(Long recipeId) {
+        Recipe recipe = getRecipeById(recipeId);
+        return imageService.downloadFile(recipe.getImage());
     }
 }

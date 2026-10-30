@@ -66,9 +66,7 @@ public class SecurityConfig {
         converter.setJwtGrantedAuthoritiesConverter(jwt -> {
             List<GrantedAuthority> authorities = new ArrayList<>();
 
-            scopesConverter.convert(jwt).forEach(authority ->
-                    authorities.addAll(scopesConverter.convert(jwt))
-            );
+            authorities.addAll(scopesConverter.convert(jwt));
 
             Map<String, Object> resourceAccess = jwt.getClaimAsMap("resource_access");
 

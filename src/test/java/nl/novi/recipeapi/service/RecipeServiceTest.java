@@ -46,6 +46,12 @@ class RecipeServiceTest {
     @Mock
     private RecipeIngredientRepository recipeIngredientRepository;
 
+    @Mock
+    private WeekMenuItemRepository weekMenuItemRepository;
+
+    @Mock
+    private ImageService imageService;
+
     private Profile createProfile(String keycloakId) {
         AppUser user = new AppUser(keycloakId, keycloakId + "@example.com");
         return new Profile("user-" + keycloakId, user);

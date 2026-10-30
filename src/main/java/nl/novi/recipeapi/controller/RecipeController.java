@@ -5,11 +5,15 @@ import nl.novi.recipeapi.dto.RecipeOutputDto;
 import nl.novi.recipeapi.model.Recipe;
 import nl.novi.recipeapi.service.RecipeService;
 import nl.novi.recipeapi.dto.RecipeInputDto;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.net.URI;
 
@@ -55,6 +59,42 @@ public class RecipeController {
 
         return ResponseEntity.created(location)
                 .body(recipeService.getRecipeOutputById(savedRecipe.getId()));
+    }
+    @PostMapping(value = "/{id}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<RecipeOutputDto> uploadRecipeImage(
+            @PathVariable Long id,
+            @RequestParam("file") MultipartFile file,
+            @AuthenticationPrincipal Jwt jwt,
+            Authentication authentication) {
+
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(authority -> "ROLE_ADMIN".equals(authority.getAuthority()));
+
+        recipeService.uploadRecipeImage(id, file, jwt.getSubject(), isAdmin);
+
+        return ResponseEntity.ok(recipeService.getRecipeOutputById(id));
+    }
+    @GetMapping("/{id}/image")
+    public ResponseEntity<Resource> getRecipeImage(@PathVariable Long id) {
+        Resource resource = recipeService.getRecipeImage(id);
+
+        String fileName = resource.getFilename();
+
+        MediaType mediaType;
+
+        if (fileName != null && fileName.endsWith(".png")) {
+            mediaType = MediaType.IMAGE_PNG;
+        } else if (fileName != null && fileName.endsWith(".webp")) {
+            mediaType = MediaType.parseMediaType("image/webp");
+        } else {
+            mediaType = MediaType.IMAGE_JPEG;
+        }
+
+        return ResponseEntity.ok()
+                .contentType(mediaType)
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "inline; filename=\"" + fileName + "\"")
+                .body(resource);
     }
     @PutMapping("/{id}")
     public ResponseEntity<Recipe> updateRecipe(
