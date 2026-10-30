@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -25,7 +26,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable())
+                .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
@@ -66,7 +67,7 @@ public class SecurityConfig {
             List<GrantedAuthority> authorities = new ArrayList<>();
 
             scopesConverter.convert(jwt).forEach(authority ->
-                    authorities.add(new SimpleGrantedAuthority(authority.getAuthority()))
+                    authorities.addAll(scopesConverter.convert(jwt))
             );
 
             Map<String, Object> resourceAccess = jwt.getClaimAsMap("resource_access");

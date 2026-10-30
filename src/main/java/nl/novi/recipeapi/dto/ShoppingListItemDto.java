@@ -2,10 +2,10 @@ package nl.novi.recipeapi.dto;
 
 public class ShoppingListItemDto {
 
-    private Long ingredientId;
-    private String name;
-    private Double amount;
-    private String unit;
+    private final Long ingredientId;
+    private final String name;
+    private final Double amount;
+    private final String unit;
 
     public ShoppingListItemDto(
             Long ingredientId,

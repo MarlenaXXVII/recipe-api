@@ -8,23 +8,23 @@ import java.util.Set;
 
 public class RecipeOutputDto {
 
-    private Long id;
-    private String title;
-    private String description;
-    private Integer preparationTime;
-    private Integer cookingTime;
-    private Integer servings;
-    private String image;
-    private Difficulty difficulty;
-    private String instructions;
-    private Integer calories;
-    private Double protein;
-    private Double carbs;
-    private Double fat;
-    private Set<Category> categories;
-    private Long ownerId;
-    private String ownerUsername;
-    private List<RecipeIngredientOutputDto> ingredients;
+    private final Long id;
+    private final String title;
+    private final String description;
+    private final Integer preparationTime;
+    private final Integer cookingTime;
+    private final Integer servings;
+    private final String image;
+    private final Difficulty difficulty;
+    private final String instructions;
+    private final Integer calories;
+    private final Double protein;
+    private final Double carbs;
+    private final Double fat;
+    private final Set<Category> categories;
+    private final Long ownerId;
+    private final String ownerUsername;
+    private final List<RecipeIngredientOutputDto> ingredients;
 
     public RecipeOutputDto(
             Long id,

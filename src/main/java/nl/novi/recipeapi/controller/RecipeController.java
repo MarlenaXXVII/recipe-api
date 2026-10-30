@@ -64,7 +64,7 @@ public class RecipeController {
             Authentication authentication) {
 
         boolean isAdmin = authentication.getAuthorities().stream()
-                .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
+                .anyMatch(authority -> "ROLE_ADMIN".equals(authority.getAuthority()));
 
         Recipe updatedRecipe = recipeService.updateRecipe(
                 id,
@@ -82,7 +82,7 @@ public class RecipeController {
             Authentication authentication) {
 
         boolean isAdmin = authentication.getAuthorities().stream()
-                .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
+                .anyMatch(authority -> "ROLE_ADMIN".equals(authority.getAuthority()));
 
         recipeService.deleteRecipe(id, jwt.getSubject(), isAdmin);
 

@@ -2,12 +2,12 @@ package nl.novi.recipeapi.dto;
 
 public class RecipeIngredientOutputDto {
 
-    private Long id;
-    private Long ingredientId;
-    private String name;
-    private Double amount;
-    private String unit;
-    private String notes;
+    private final Long id;
+    private final Long ingredientId;
+    private final String name;
+    private final Double amount;
+    private final String unit;
+    private final String notes;
 
     public RecipeIngredientOutputDto(
             Long id,
