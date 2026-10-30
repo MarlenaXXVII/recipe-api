@@ -14,15 +14,6 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(ProfileAlreadyExistsException.class)
-    public ResponseEntity<Map<String, String>> handleProfileAlreadyExists(
-            ProfileAlreadyExistsException exception) {
-
-        return ResponseEntity
-                .status(HttpStatus.CONFLICT)
-                .body(Map.of("message", exception.getMessage()));
-    }
-
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> handleValidationException(
             MethodArgumentNotValidException exception) {
@@ -38,10 +29,11 @@ public class GlobalExceptionHandler {
                 .body(Map.of("message", message));
     }
 
-    @ExceptionHandler(UsernameAlreadyExistsException.class)
-    public ResponseEntity<Map<String, String>> handleUsernameAlreadyExists(
-            UsernameAlreadyExistsException exception) {
-
+    @ExceptionHandler({
+            ProfileAlreadyExistsException.class,
+            UsernameAlreadyExistsException.class
+    })
+    public ResponseEntity<Map<String, String>> handleAlreadyExists(RuntimeException exception) {
         return ResponseEntity
                 .status(HttpStatus.CONFLICT)
                 .body(Map.of("message", exception.getMessage()));

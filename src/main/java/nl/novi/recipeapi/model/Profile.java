@@ -41,15 +41,7 @@ public class Profile {
         return username;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
     public AppUser getUser() {
         return user;
-    }
-
-    public void setUser(AppUser user) {
-        this.user = user;
     }
 }

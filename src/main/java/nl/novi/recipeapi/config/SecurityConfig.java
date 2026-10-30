@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -25,14 +26,15 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable())
+                .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.GET, "/recipes/myrecipes").hasAnyRole("USER", "ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/recipes/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/recipes", "/recipes/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/ingredients/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/categories/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/categories").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/recipes/**").hasAnyRole("USER", "ADMIN")
                         .requestMatchers(HttpMethod.POST, "/recipes/**").hasAnyRole("USER", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/recipes/**").hasAnyRole("USER", "ADMIN")
@@ -42,6 +44,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/weekmenu").hasAnyRole("USER", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/weekmenu/**").hasAnyRole("USER", "ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/weekmenu/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/shopping-list").hasAnyRole("USER", "ADMIN")
                         .anyRequest().denyAll()
                 )
                 .exceptionHandling(exceptions -> exceptions
@@ -64,7 +67,7 @@ public class SecurityConfig {
             List<GrantedAuthority> authorities = new ArrayList<>();
 
             scopesConverter.convert(jwt).forEach(authority ->
-                    authorities.add(new SimpleGrantedAuthority(authority.getAuthority()))
+                    authorities.addAll(scopesConverter.convert(jwt))
             );
 
             Map<String, Object> resourceAccess = jwt.getClaimAsMap("resource_access");

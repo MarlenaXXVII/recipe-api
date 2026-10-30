@@ -6,14 +6,11 @@ import java.time.LocalDate;
 
 public class WeekMenuItemOutputDto {
 
-    private Long id;
-    private Long recipeId;
-    private String recipeTitle;
-    private LocalDate date;
-    private MealType mealType;
-
-    public WeekMenuItemOutputDto() {
-    }
+    private final Long id;
+    private final Long recipeId;
+    private final String recipeTitle;
+    private final LocalDate date;
+    private final MealType mealType;
 
     public WeekMenuItemOutputDto(
             Long id,

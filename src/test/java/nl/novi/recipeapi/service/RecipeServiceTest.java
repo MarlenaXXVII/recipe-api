@@ -6,12 +6,9 @@ import nl.novi.recipeapi.model.AppUser;
 import nl.novi.recipeapi.model.Category;
 import nl.novi.recipeapi.model.Profile;
 import nl.novi.recipeapi.model.Recipe;
-import nl.novi.recipeapi.repository.CategoryRepository;
-import nl.novi.recipeapi.repository.ProfileRepository;
-import nl.novi.recipeapi.repository.RecipeRepository;
+import nl.novi.recipeapi.repository.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -42,6 +39,12 @@ class RecipeServiceTest {
 
     @InjectMocks
     private RecipeService recipeService;
+
+    @Mock
+    private IngredientRepository ingredientRepository;
+
+    @Mock
+    private RecipeIngredientRepository recipeIngredientRepository;
 
     private Profile createProfile(String keycloakId) {
         AppUser user = new AppUser(keycloakId, keycloakId + "@example.com");
