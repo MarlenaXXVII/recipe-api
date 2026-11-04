@@ -189,3 +189,4 @@ Bij de eindopdracht worden de volgende bestanden meegeleverd:
 - Verantwoordingsdocument.
 
 Deze documenten geven aanvullende informatie over het ontwerp, de werking en de gemaakte keuzes binnen de applicatie.
+test
