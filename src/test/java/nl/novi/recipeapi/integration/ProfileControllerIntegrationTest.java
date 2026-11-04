@@ -1,5 +1,6 @@
 package nl.novi.recipeapi.integration;
 
+import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.ObjectMapper;
 import nl.novi.recipeapi.model.AppUser;
 import nl.novi.recipeapi.model.Profile;
@@ -24,6 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@Transactional
 class ProfileControllerIntegrationTest {
 
     @Autowired
@@ -38,12 +40,6 @@ class ProfileControllerIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @BeforeEach
-    void setUp() {
-        profileRepository.deleteAll();
-        appUserRepository.deleteAll();
-    }
-
     @Test
     void getMyProfileWithoutTokenReturnsUnauthorized() throws Exception {
         mockMvc.perform(get("/profiles/me"))
@@ -57,7 +53,7 @@ class ProfileControllerIntegrationTest {
         );
 
         profileRepository.save(
-                new Profile("Kookliefhebber", user)
+                new Profile("TestKookliefhebber", user)
         );
 
         mockMvc.perform(get("/profiles/me")
@@ -65,7 +61,7 @@ class ProfileControllerIntegrationTest {
                                 .jwt(token -> token.subject("keycloak-123"))
                                 .authorities(() -> "ROLE_USER")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.username").value("Kookliefhebber"))
+                .andExpect(jsonPath("$.username").value("TestKookliefhebber"))
                 .andExpect(jsonPath("$.email").value("test@example.com"));
     }
 
